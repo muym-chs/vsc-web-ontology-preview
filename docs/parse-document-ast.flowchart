@@ -1,0 +1,32 @@
+flowchart TD
+    subgraph INPUT["1. Warstwa Wejściowa (VS Code Active Editor)"]
+        F_TWIG["Plik *.html.twig + opcjonalny *.component.yml"]
+        F_NG["Plik Angular *.component.html"]
+        F_JSX["Plik React *.jsx / *.tsx"]
+        F_HTML["Czysty plik *.html"]
+    end
+
+    subgraph PRE["2. Warstwa Pre-procesorów i Tokenizerów Składniowych"]
+        T_DRUPAL["Drupal & Twig Preprocessor\n• {% set classes = [...] %} -> Mapa klas\n• attributes.addClass() -> data-drupal-classes\n• attach_library() -> metadata.drupalLibraries"]
+        T_SDC["SDC & Macro Transformer\n• {% include/embed 'provider:comp' %} -> <sdc:embed>\n• {% block %} wewnątrz embed -> <sdc:slot>\n• {% macro %} / {{ _self.fn() }} -> <twig:macro>"]
+        T_NG["Angular 17+ Balanced-Brace Tokenizer\n• Zliczanie głębokości klamer { ... }\n• @if / @for / @defer / @empty -> <ng:if>, <ng:for>"]
+        T_BABEL["@babel/parser (errorRecovery: true)\n• Drzewo AST JSXElement / JSXExpressionContainer\n• Rozbicie PascalCase nazw komponentów"]
+    end
+
+    subgraph CORE_PARSE["3. Normalizacja Strukturalna i Klasyfikacja CSS"]
+        HTML_P["htmlparser2 (Fault-Tolerant Stream)\nBuduje hierarchię węzłów i wyciąga literały |t oraz content.field_*"]
+        CSS_C["CssFrameworkClassifier\nMapuje klasy Tailwind / Bootstrap / BEM na:\nlayoutType: block | flex | grid | inline"]
+    end
+
+    subgraph AST_OUT["4. Ujednolicony Model Pośredni (ParsedDocumentAst)"]
+        RAW_NODE["RawAstNode[]\n• tagOrComponent & frameworkOrigin\n• rawTextSegments[] (statyczne + tokeny zmiennych)\n• domBoostWeight (1.0x - 5.0x)\n• data-estimated-lines-boost (dla pól encji)"]
+        REL_OUT["OntologyRelation[]\n• parent-child\n• twig-include (SDC / include)\n• prop-binding (SDC slots, React props, Twig Macros)"]
+    end
+
+    F_TWIG --> T_DRUPAL --> T_SDC --> HTML_P
+    F_NG --> T_NG --> HTML_P
+    F_HTML --> HTML_P
+    F_JSX --> T_BABEL --> CSS_C
+    HTML_P --> CSS_C
+    CSS_C --> RAW_NODE
+    CSS_C --> REL_OUT

@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vscode-ui-ontology.dev/schemas/document-ontology.schema.json",
+  "title": "DocumentOntology",
+  "description": "Kontrakt danych dla wizualizacji generycznych komponentów blokowych, metryk TF-IDF/DOM oraz ontologii powiązań w VS Code Webview.",
+  "type": "object",
+  "required": [
+    "fileName",
+    "globalMetrics",
+    "rootNodes",
+    "relations"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "fileName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Nazwa lub ścieżka względna analizowanego pliku (np. 'node--article.html.twig', 'OrderSummary.tsx')."
+    },
+    "globalMetrics": {
+      "type": "object",
+      "required": [
+        "totalBlocks",
+        "globalMostFrequent",
+        "globalMostSignificant",
+        "metadataExtracted"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "totalBlocks": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Całkowita liczba wyodrębnionych węzłów blokowych w dokumencie."
+        },
+        "globalMostFrequent": {
+          "oneOf": [
+            { "$ref": "#/$defs/FrequentWordMetric" },
+            { "type": "null" }
+          ],
+          "description": "Najpopularniejsze słowo w całym dokumencie DOM/AST (najwyższe surowe TF)."
+        },
+        "globalMostSignificant": {
+          "oneOf": [
+            { "$ref": "#/$defs/SignificantWordMetric" },
+            { "type": "null" }
+          ],
+          "description": "Najbardziej znaczące słowo w całym dokumencie (najwyższy wynik TF-IDF * DOM Boost)."
+        },
+        "metadataExtracted": {
+          "type": "object",
+          "description": "Wyekstrahowane metadane dokumentu (title, meta description, drupalLibraries, sdcComponentName, twigMacroImports).",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "rootNodes": {
+      "type": "array",
+      "description": "Lista korzeni drzewa ontologicznego komponentów wizualnych.",
+      "items": {
+        "$ref": "#/$defs/OntologyNode"
+      }
+    },
+    "relations": {
+      "type": "array",
+      "description": "Krawędzie grafu ontologii łączące komponenty na warstwie SVG.",
+      "items": {
+        "$ref": "#/$defs/OntologyRelation"
+      }
+    }
+  },
+  "$defs": {
+    "FrequentWordMetric": {
+      "type": "object",
+      "required": ["word", "count"],
+      "additionalProperties": false,
+      "properties": {
+        "word": {
+          "type": "string",
+          "minLength": 2
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "SignificantWordMetric": {
+      "type": "object",
+      "required": ["word", "score"],
+      "additionalProperties": false,
+      "properties": {
+        "word": {
+          "type": "string",
+          "minLength": 2
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Wyliczona waga semantyczna: TF * domBoostWeight * IDF."
+        },
+        "source": {
+          "type": "string",
+          "description": "Źródło najwyższego mnożnika (np. 'h1', 'sdc:component', 'drupal:field_title', 'meta')."
+        }
+      }
+    },
+    "OntologyNode": {
+      "type": "object",
+      "required": [
+        "id",
+        "tagOrComponent",
+        "frameworkOrigin",
+        "layoutType",
+        "cssFrameworkHints",
+        "metrics",
+        "children"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "description": "Unikalny identyfikator węzła w obrębie dokumentu (np. 'node-1', 'jsx-node-4')."
+        },
+        "tagOrComponent": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Nazwa tagu HTML, komponentu React/Angular, komponentu SDC ('sdc:embed (theme:card)') lub makra Twig."
+        },
+        "frameworkOrigin": {
+          "type": "string",
+          "enum": ["html", "twig", "react", "angular"],
+          "description": "Technologia źródłowa determinująca kolorystykę obramowania w Webview."
+        },
+        "layoutType": {
+          "type": "string",
+          "enum": ["block", "flex", "grid", "inline"],
+          "description": "Znormalizowany typ układu przestrzennego wyznaczony przez CssFrameworkClassifier."
+        },
+        "cssFrameworkHints": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "string"
+          },
+          "description": "Kluczowe klasy CSS odpowiedzialne za układ (np. ['flex', 'justify-between', 'col-md-6'])."
+        },
+        "sourceLine": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Numer linii w edytorze VS Code służący do nawigacji po kliknięciu w nagłówek bloku."
+        },
+        "metrics": {
+          "type": "object",
+          "required": [
+            "estimatedTextLines",
+            "isDynamicContent",
+            "mostFrequentWord",
+            "mostSignificantWord"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "estimatedTextLines": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Liczba pustych linii tekstu (Skeleton Lines) renderowanych wewnątrz komponentu blokowego."
+            },
+            "isDynamicContent": {
+              "type": "boolean",
+              "description": "Flaga określająca, czy linie tekstu pochodzą z dynamicznych bindowań ({{ var }}, {children}, content.field_*)."
+            },
+            "mostFrequentWord": {
+              "oneOf": [
+                { "$ref": "#/$defs/FrequentWordMetric" },
+                { "type": "null" }
+              ]
+            },
+            "mostSignificantWord": {
+              "oneOf": [
+                { "$ref": "#/$defs/SignificantWordMetric" },
+                { "type": "null" }
+              ]
+            }
+          }
+        },
+        "children": {
+          "type": "array",
+          "description": "Węzły potomne zagnieżdżone wewnątrz danego komponentu blokowego.",
+          "items": {
+            "$ref": "#/$defs/OntologyNode"
+          }
+        }
+      }
+    },
+    "OntologyRelation": {
+      "type": "object",
+      "required": ["fromId", "toId", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "fromId": {
+          "type": "string",
+          "description": "Identyfikator węzła źródłowego."
+        },
+        "toId": {
+          "type": "string",
+          "description": "Identyfikator węzła docelowego."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "parent-child",
+            "twig-include",
+            "prop-binding",
+            "semantic-similarity"
+          ],
+          "description": "Typ powiązania ontologicznego determinujący styl linii SVG (ciągła, przerywana, kolor)."
+        },
+        "label": {
+          "type": "string",
+          "description": "Etykieta opisująca relację (np. 'slot: header', 'shared: zamówienie', 'macro: _self.button()')."
+        }
+      }
+    }
+  }
+}

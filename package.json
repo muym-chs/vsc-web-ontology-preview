@@ -1,0 +1,87 @@
+{
+  "name": "ui-ontology-visualizer",
+  "displayName": "UI Ontology Visualizer",
+  "version": "1.0.0",
+  "publisher": "my-local-publisher",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "activationEvents": [
+    "onLanguage:html",
+    "onLanguage:twig",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescriptreact"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "UI Ontology Visualizer",
+      "properties": {
+        "uiOntology.customCssGridRegex": {
+          "type": "string",
+          "default": "^(uk-grid|columns|l-grid)",
+          "description": "Dodatkowe wyrażenie regularne rozpoznające kontenery CSS Grid."
+        },
+        "uiOntology.customCssFlexRegex": {
+          "type": "string",
+          "default": "^(uk-flex|is-flex|l-flex)",
+          "description": "Dodatkowe wyrażenie regularne rozpoznające kontenery CSS Flexbox."
+        },
+        "uiOntology.domWeightsOverride": {
+          "type": "object",
+          "default": {
+            "h1": 5.0,
+            "sdc:component": 3.8,
+            "twig:macro": 2.8
+          },
+          "description": "Nadpisanie mnożników wag semantycznych DOM dla wybranych tagów lub prefiksów."
+        },
+        "uiOntology.charsPerSkeletonLine": {
+          "type": "number",
+          "default": 65,
+          "description": "Liczba znaków przypadająca na jedną pustą linię tekstu (Skeleton Line) w wizualizacji."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "uiOntology.openPreview",
+        "title": "UI Ontology: Pokaż wizualizację i analizę DOM",
+        "icon": "$(type-hierarchy-sub)"
+      },
+      {
+        "command": "uiOntology.openUiConfig",
+        "title": "UI Ontology: Konfiguracja UI i Animacji"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "uiOntology.openPreview",
+          "when": "resourceLangId == html || resourceLangId == twig || resourceLangId == typescriptreact || resourceLangId == javascriptreact",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "bun run compile",
+    "compile": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap && esbuild src/webview/ontology-viewer.ts --bundle --outfile=dist/webview.js --format=iife --sourcemap",
+    "watch": "bun run compile && echo '[watch] build started' && echo '[watch] build finished'",
+    "test": "bun test",
+    "package": "bunx vsce package"
+  },
+  "devDependencies": {
+    "@types/babel__traverse": "^7.28.0",
+    "@types/vscode": "^1.144.0",
+    "@vscode/vsce": "^4.1.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@babel/parser": "^8.1.0",
+    "@babel/traverse": "^8.1.0",
+    "@babel/types": "^8.1.0",
+    "htmlparser2": "^12.0.0"
+  }
+}
